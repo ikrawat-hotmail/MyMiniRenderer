@@ -1,55 +1,46 @@
-# collisionSystem library CMake configuration
-# Note: This is a subdirectory project, output directories are set by parent CMakeLists.txt
+cmake_minimum_required(VERSION 3.15)
+project(CollisionProject VERSION 1.0.0 LANGUAGES CXX)
 
-# Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Header files (now in shared src/include directory)
-set(HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/collision.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/rect.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/vector2f.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/vector3f.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/polygon2D.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/circle.h
+# Set output directories to the out folder at project root
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/lib)
+
+# For multi-configuration generators (like Visual Studio)
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/out/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/out/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/out/lib)
+endforeach()
+
+# Add subdirectories
+add_subdirectory(src/collisionSystem)
+add_subdirectory(src/rigidBody)
+
+# Create the example application executable
+add_executable(example_app src/example_app.cpp)
+
+# Link the example app with the collision library
+target_link_libraries(example_app PRIVATE collision)
+
+# Include directories from shared include directory
+target_include_directories(example_app PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include
 )
 
-# Source files for the library
-set(LIB_SOURCES
-    collision.cpp
-)
-
-# Test source files
-set(TEST_SOURCES
-    test/main.cpp
-)
-
-# Create shared library
-add_library(collision SHARED ${LIB_SOURCES} ${HEADERS})
-
-# Set library properties
-set_target_properties(collision PROPERTIES
-    VERSION 1.0.0
-    SOVERSION 1
-    PUBLIC_HEADER "${HEADERS}"
-)
-
-# Include directories for the library (shared include directory)
-target_include_directories(collision PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-    $<INSTALL_INTERFACE:include>
-)
-
-# Create executable for testing
-add_executable(collision_test ${TEST_SOURCES})
-
-# Link test executable with the library
-target_link_libraries(collision_test PRIVATE collision)
-target_include_directories(collision_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-
-# Installation rules (optional)
-install(TARGETS collision collision_test
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-    PUBLIC_HEADER DESTINATION include/collisionSystem
-)
+# Print build information
+message(STATUS "===========================================")
+message(STATUS "Project: ${PROJECT_NAME}")
+message(STATUS "Version: ${PROJECT_VERSION}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Output directories:")
+message(STATUS "  Libraries: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+message(STATUS "  Executables: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "===========================================")
