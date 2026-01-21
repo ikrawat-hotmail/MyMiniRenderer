@@ -53,6 +53,8 @@ Vec3f ModelLoader::parseVec3f(sj_Reader* reader, sj_Value arrayVal) {
     return result;
 }
 
+
+// ToDo: collider mechanism parsing need to be added
 int ModelLoader::parseModelFromJson(
                 std::vector<std::shared_ptr<RigidBody2D>>& rigidBodyArr,
                 std::string jsonStr) {
@@ -126,83 +128,92 @@ int ModelLoader::parseModelFromJson(
                         std::string shapeType = "";
                         while (sj_iter_array(&reader, shapeVal, &shapeObj)) {
                             if (shapeObj.type == SJ_OBJECT) {
-                                std::string parsedShapeType;
+                                // First pass: collect all properties
+                                std::string shapeType;
+                                std::string role = "geometry";  // default role
                                 float radius = 0;
                                 Vec2f p1(0, 0), p2(0, 0);
                                 Vec2f relativePos(0, 0);
                                 Vec3f color(0, 0, 0);
-                                std::shared_ptr<Polygon2D> shape2d;
-                                bool validShape = false;
-
                                 
                                 sj_Value sKey, sVal;
                                 while (sj_iter_object(&reader, shapeObj, &sKey, &sVal)) {
                                     if (keyEquals(sKey, "type")) {
-                                        parsedShapeType = extractString(sVal);
-                                        std::cout << "  type: " << parsedShapeType << std::endl;
-
-                                        if (parsedShapeType == "rectangle") {
-                                            shape2d = std::make_shared<Rect>();
-                                            parsedShapeType = "rectangle";
-                                        } else if (parsedShapeType == "circle") {
-                                            shape2d = std::make_shared<Circle>();
-                                            parsedShapeType = "circle";
-                                        }
+                                        shapeType = extractString(sVal);
+                                    }
+                                    else if (keyEquals(sKey, "role")) {
+                                        role = extractString(sVal);
                                     }
                                     else if (keyEquals(sKey, "radius")) {
                                         radius = extractNumber(sVal);
-                                        std::cout << "  radius: " << radius << std::endl;
-                                        
-                                        BodyType bodyType = shape2d->getType();
-                                        if (bodyType == BodyType::CIRCLE) {
-                                            auto& circle = static_cast<Circle&>(*shape2d);
-                                            circle.radius = radius;
-                                            validShape = true;
-                                        } else {
-                                            std::cout << "ERROR: specifying radius for unknown shape" << std::endl;
-                                        }
                                     }
                                     else if (keyEquals(sKey, "points")) {
                                         if (sVal.type == SJ_ARRAY) {
                                             sj_Value pointArray;
                                             int pointIdx = 0;
                                             while (sj_iter_array(&reader, sVal, &pointArray)) {
-                                                if (pointIdx == 0) {
-                                                    p1 = parseVec2f(&reader, pointArray);
-                                                } else if (pointIdx == 1) {
-                                                    p2 = parseVec2f(&reader, pointArray);
-                                                }
+                                                if (pointIdx == 0) p1 = parseVec2f(&reader, pointArray);
+                                                else if (pointIdx == 1) p2 = parseVec2f(&reader, pointArray);
                                                 pointIdx++;
                                             }
-
-                                            BodyType bodyType = shape2d->getType();
-                                            if (bodyType == BodyType::RECTANGLE && pointIdx == 2) {
-                                                auto& rect = static_cast<Rect&>(*shape2d);
-                                                rect.set(p1, p2);
-                                                validShape = true;
-                                            } else {
-                                                std::cout << "ERROR: specifying points for unknown shape" << std::endl;
-                                            }
-
-                                            std::cout << "  points: P1[" << p1.x << ", " << p1.y << "], P2[" << p2.x << ", " << p2.y << "]" << std::endl;
                                         }
                                     }
                                     else if (keyEquals(sKey, "relative_position")) {
                                         relativePos = parseVec2f(&reader, sVal);
-                                        std::cout << "  relative_position: [" << relativePos.x << ", " << relativePos.y << "]" << std::endl;
-
-                                        shape2d->relativePosition = relativePos;
                                     }
                                     else if (keyEquals(sKey, "color")) {
                                         color = parseVec3f(&reader, sVal);
-                                        std::cout << "  color: [" << color.x << ", " << color.y << ", " << color.z << "]" << std::endl;
-                                        shape2d->color = color;
                                     }
                                 }
-                                if (validShape)
-                                    rigidBodySp->mPolygons.push_back(shape2d);
-                                else
-                                    std::cout << "not a valid shape" << std::endl;
+                                
+                                // Second pass: create objects based on role
+                                std::cout << "  type: " << shapeType << ", role: " << role << std::endl;
+                                
+                                if (role == "geometry") {
+                                    // Create geometry shape
+                                    std::shared_ptr<Polygon2D> shape2d;
+                                    
+                                    if (shapeType == "circle" && radius > 0) {
+                                        auto circle = std::make_shared<Circle>();
+                                        circle->radius = radius;
+                                        circle->relativePosition = relativePos;
+                                        circle->color = color;
+                                        shape2d = circle;
+                                        std::cout << "  Created Circle geometry with radius: " << radius << std::endl;
+                                    }
+                                    else if (shapeType == "rectangle" && (p1.x != 0 || p1.y != 0 || p2.x != 0 || p2.y != 0)) {
+                                        auto rect = std::make_shared<Rect>();
+                                        rect->set(p1, p2);
+                                        rect->relativePosition = relativePos;
+                                        rect->color = color;
+                                        shape2d = rect;
+                                        std::cout << "  Created Rectangle geometry: P1[" << p1.x << ", " << p1.y << "], P2[" << p2.x << ", " << p2.y << "]" << std::endl;
+                                    }
+                                    
+                                    if (shape2d) {
+                                        rigidBodySp->mPolygons.push_back(shape2d);
+                                    }
+                                }
+                                else if (role == "collision") {
+                                    // Create collider
+                                    std::shared_ptr<Collider2D> collider2d;
+                                    
+                                    if (shapeType == "circle" && radius > 0) {
+                                        collider2d = std::make_shared<CircleCollider>(radius, relativePos);
+                                        std::cout << "  Created CircleCollider with radius: " << radius << std::endl;
+                                    }
+                                    else if (shapeType == "rectangle" && (p1.x != 0 || p1.y != 0 || p2.x != 0 || p2.y != 0)) {
+                                        auto rectCollider = std::make_shared<RectangleCollider>();
+                                        rectCollider->set(p1, p2);
+                                        collider2d = rectCollider;
+                                        std::cout << "  Created RectangleCollider: min[" << rectCollider->getMin().x << ", " << rectCollider->getMin().y 
+                                                  << "], max[" << rectCollider->getMax().x << ", " << rectCollider->getMax().y << "]" << std::endl;
+                                    }
+                                    
+                                    if (collider2d) {
+                                        rigidBodySp->mColliders.push_back(collider2d);
+                                    }
+                                }
                             }
                         }
                     }
@@ -240,9 +251,4 @@ int ModelLoader::loadModels(std::vector<std::shared_ptr<RigidBody2D>>& rigidBody
         }
     }
     return 0; 
-}
-
- // loads all models.
-int ModelLoader::init(std::vector<std::shared_ptr<RigidBody2D>>& rigidBodyArr) {
-    return loadModels(rigidBodyArr);
 }
