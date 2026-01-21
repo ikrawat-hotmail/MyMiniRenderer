@@ -1,4 +1,4 @@
-Work in progress!!!
+Does not works!!! Yet!!!       :D
 
 A small project to understand the workflow of openGL rendering.
 
