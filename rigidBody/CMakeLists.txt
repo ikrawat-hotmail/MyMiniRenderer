@@ -36,7 +36,11 @@ set_target_properties(rigidBody PROPERTIES
 target_include_directories(rigidBody PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     $<INSTALL_INTERFACE:include>
+    ${CMAKE_SOURCE_DIR}/src/external/glad/include
 )
+
+# Link with glad library
+target_link_libraries(rigidBody PUBLIC glad)
 
 # Test executable for rigidBody parser
 add_executable(rigidBodyParserTest test/rigidbodyParserTest.cpp)
@@ -52,8 +56,15 @@ add_executable(modelLoaderTest test/modelLoaderTest.cpp)
 target_link_libraries(modelLoaderTest PRIVATE rigidBody)
 target_include_directories(modelLoaderTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
+# Test executable for model loader with colliders (sample2.json)
+add_executable(modelLoaderTest2 test/modelLoaderTest2.cpp)
+
+# Link test with rigidBody library
+target_link_libraries(modelLoaderTest2 PRIVATE rigidBody)
+target_include_directories(modelLoaderTest2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+
 # Installation rules (optional)
-install(TARGETS rigidBody rigidBodyParserTest modelLoaderTest
+install(TARGETS rigidBody rigidBodyParserTest modelLoaderTest modelLoaderTest2
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
     PUBLIC_HEADER DESTINATION include/rigidBody
