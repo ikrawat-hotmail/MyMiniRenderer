@@ -8,6 +8,9 @@
 
     Somehow this is called composite body!!!
     Duh!!!
+
+    It was suggested to seprate Collider and Rigid body separately
+    Reason will become clear later!!!
 */
 
 #include <vector>
@@ -16,7 +19,7 @@
 #include "vector2f.h"
 #include "rect.h"
 #include "circle.h"
-#include "collision.h"
+#include "collider2D.h"
 
 class RigidBody2D {
 public:
@@ -30,9 +33,10 @@ public:
     // other physics
 
     std::vector<std::shared_ptr<Polygon2D>> mPolygons;
+    std::vector<std::shared_ptr<Collider2D>> mColliders;
 
     RigidBody2D(Polygon2D& poly);
-    RigidBody2D();
+    RigidBody2D() {}
 
     BodyType getType() const;
 
