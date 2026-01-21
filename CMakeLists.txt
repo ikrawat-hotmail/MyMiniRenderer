@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(CollisionProject VERSION 1.0.0 LANGUAGES CXX)
+project(CollisionProject VERSION 1.0.0 LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -18,6 +18,10 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/out/lib)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/out/lib)
 endforeach()
+
+# GLAD library setup (now in src/external)
+add_library(glad STATIC ${CMAKE_SOURCE_DIR}/src/external/glad/src/glad.c)
+target_include_directories(glad PUBLIC ${CMAKE_SOURCE_DIR}/src/external/glad/include)
 
 # Add subdirectories
 add_subdirectory(src/collisionSystem)
