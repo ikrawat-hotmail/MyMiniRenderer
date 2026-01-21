@@ -1,5 +1,5 @@
-#ifndef COLLISION_H
-#define COLLISION_H
+#ifndef COLLISION_MANAGER_H
+#define COLLISION_MANAGER_H
 #include <vector>
 #include "vector2f.h"
 #include "rect.h"
