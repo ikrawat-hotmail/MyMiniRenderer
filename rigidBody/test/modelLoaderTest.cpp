@@ -10,12 +10,13 @@ int main() {
     cout << somethingunused.size() << endl;
     cout << "=======================================" << endl;
     ModelLoader &modelLoaderInstance = ModelLoader::getInstance();
-    modelLoaderInstance.init(somethingunused);
+    // replace init with load models along with path
+    // modelLoaderInstance.init(somethingunused);
 
-    cout << "=======================================" << endl;
-    cout << somethingunused.size() << endl;
-    for (auto& eachBody : somethingunused) {
-        std::cout << eachBody->mId << endl;
-    }
+    // cout << "=======================================" << endl;
+    // cout << somethingunused.size() << endl;
+    // for (auto& eachBody : somethingunused) {
+    //     std::cout << eachBody->mId << endl;
+    // }
     return 0;
 }
